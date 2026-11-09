@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#f5f4ef"><meta name="description" content="ODEAction 学习动作如何演化。通过交互图解与机器人实验，了解连续动作生成。"><title>ODEAction — 从预测动作块到连续动作演化</title><link rel="icon" href="assets/logo.svg" type="image/svg+xml"><link rel="stylesheet" href="style.css"><link rel="alternate" hreflang="en" href="index.html"><link rel="alternate" hreflang="zh-CN" href="zh.html"></head>
+<body><a class="skip" href="#story">跳到正文</a><header><a class="brand" href="#top"><img src="assets/logo.svg" alt="Symbiosis Robotics"></a><nav aria-label="主导航"><a href="#idea">思路</a><a href="#method">方法</a><a href="#results">结果</a><a class="paper-link" href="assets/ODEAction.pdf">阅读论文 ↗</a><a class="language-link" href="index.html" lang="en" hreflang="en" aria-label="Switch to English">English</a></nav></header>
+
+<main id="top">
+<div class="hero wide">
+  <div class="eyebrow">SYMBIOSIS ROBOTICS · 研究</div>
+  <h1>ODEAction</h1>
+  <p class="subtitle"><span>从预测动作块</span><span>到<em>连续动作演化。</em></span></p>
+  <div class="hero-bottom"><p class="intro">机器人在连续的世界中运动，它的动作也应自然演化。</p><div class="links"><a href="assets/ODEAction.pdf">论文 ↗</a></div></div>
+<div class="front-authors" id="authors"><div id="authorList" aria-label="作者"></div><div class="author-meta"><span>‡ 项目负责人 · * 通讯作者</span><details><summary>所属机构</summary><div id="affiliationList"></div></details></div></div>
+</div>
+<figure class="wide comparison" id="idea">
+  <div class="compare-grid">
+    <div><div class="plot-heading"><span class="dot blue"></span>动作分块<span class="plot-index">01</span></div>
+      <svg id="chunks" viewBox="0 0 560 216" role="img" aria-label="两个独立预测的动作块，在交界处出现跳变"></svg>
+      <p>一次预测一个动作块，再预测下一个。</p></div>
+    <div><div class="plot-heading"><span class="dot orange"></span>连续动作演化<span class="plot-index">02</span></div>
+      <svg id="continuous" viewBox="0 0 560 216" role="img" aria-label="动作沿着相连的轨迹逐步演化"></svg>
+      <p>从当前动作出发，逐步演化。</p></div>
+  </div>
+  <figcaption><span>两种动作生成范式</span><div class="figure-actions"><button class="control-button" id="heroPlay"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14M16 5v14"/></svg><span>暂停</span></button><button class="control-button" id="heroReplay"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10a8 8 0 1 1 1 8M4 4v6h6"/></svg><span>重播</span></button></div></figcaption>
+</figure>
+<article id="story">
+<section class="idea-section">
+  <figure class="wide paper-figure teaser" id="figure1">
+    <img src="assets/figure1.png" width="1800" height="750" alt="图 1：动作生成范式、满水杯执行对比、末端轨迹与代表性实验结果" loading="lazy">
+    <figcaption id="figure1-caption" class="paper-caption"><div class="caption-copy"><strong>图 1。 从动作块预测到连续动作演化。</strong> (a) Base Policy 使用动作块预测，在动作块切换处容易出现动作突变，而 ODEAction 的连续演化使动作轨迹连续生成。真实机器人任务执行及对应末端轨迹的对比，展示了两种方法在执行平滑度和轨迹连续性上的差异。(b) EBench 仿真与真实机器人任务上的代表性结果：与 Base Policy 相比，ODEAction 提高了任务成功率（SR），并降低了末端平均绝对 jerk（EE-MAJ）。</div><button class="control-button" data-zoom="figure1.png"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4H4v5m11-5h5v5M4 15v5h5m11-5v5h-5"/></svg><span>放大</span></button></figcaption>
+  </figure>
+  <div class="prose"><h2 class="section-title"><span>01</span> 核心思路</h2>
+    <h3>改变动作生成的基本单元。</h3>
+    <p>视觉语言动作模型通常一次预测一整段未来动作。机器人执行这个<strong>动作块（action chunk）</strong>，再切换到新预测的动作块。由于前后两块分别生成，新的动作块可能带来不同的运动趋势，在交界处产生突变。</p>
+    <p>ODEAction 将生成的基础转向<strong>当前动作及其演化率</strong>。模型结合场景、指令和机器人状态，预测当前动作如何变化；通过积分得到下一个动作，再以它为起点继续演化。这就是从预测未来动作块，到<strong>连续动作演化（Continuous Action Evolution）</strong>的范式转变。</p>
+  </div>
+
+  <div class="prose teaser-story"><h3>精细操作，让范式差异变得可见。</h3>
+    <p>放置水杯任务要求机器人把盛满水的杯子移到盘子上，全程不洒水。如 <a class="figure-ref" href="#figure1-caption">图 1(a)</a> 所示，分块策略在切换处出现明显的末端轨迹突变，并伴随洒水；ODEAction 则以更连续的轨迹完成移动。这样的执行差异，引出了接下来的问题：如何利用示范，让模型学会从当前动作出发持续演化？</p>
+  </div>
+</section>
+<section id="method">
+  <div class="prose"><h2 class="section-title"><span>02</span> 方法</h2><h3>学习动作转移场。</h3>
+    <p>驱动这一演化过程的是<strong>动作转移场（Action Transition Field）</strong>：输入当前动作、演化时间和任务条件，输出一个与动作同维度的向量，表示动作的变化率。示范为这个场提供监督方向，常微分方程（ODE）则将学到的方向转化为动作序列。</p>
+<p>如 <a class="figure-ref" href="#figure2-caption">图 2</a> 所示，方法分为三个步骤。首先，从离散示范及其邻域构造目标动作转移场（a）；随后，结合视觉观测、语言指令和机器人状态，通过直接监督学习这个场（b）；执行时，再以当前动作为初始条件，通过 ODE 积分递归生成后续动作（c）。下面依次说明这些方向如何构造、如何学习，以及如何转化为动作。</p>
+  </div>
+  <figure class="wide method-figure paper-figure" id="methodFigure">
+    <div class="method-toolbar"><div id="methodStep" class="method-step">a · 从示范构造目标动作转移场。</div><div class="figure-actions"><button class="control-button" data-zoom="figure2.png"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4H4v5m11-5h5v5M4 15v5h5m11-5v5h-5"/></svg><span>放大</span></button><button class="control-button" id="methodPlay"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14M16 5v14"/></svg><span>暂停</span></button><button class="control-button" id="methodReplay"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10a8 8 0 1 1 1 8M4 4v6h6"/></svg><span>重播</span></button></div></div>
+    <svg viewBox="6 10 1788 668" role="img" aria-label="图 2：构造目标场、直接学习向量场，再通过 ODE 递归生成动作"><defs><clipPath id="clip-a"><rect width="1045" height="404"/></clipPath><clipPath id="clip-b"><rect y="404" width="1045" height="319"/></clipPath><clipPath id="clip-c"><rect x="1045" width="755" height="723"/></clipPath></defs><image class="method-underlay" href="assets/figure2.png" width="1800" height="723"/><image class="method-part" data-part="a" href="assets/figure2.png" width="1800" height="723" clip-path="url(#clip-a)"/><image class="method-part" data-part="b" href="assets/figure2.png" width="1800" height="723" clip-path="url(#clip-b)"/><image class="method-part" data-part="c" href="assets/figure2.png" width="1800" height="723" clip-path="url(#clip-c)"/></svg>
+    <div class="sequence-progress" aria-hidden="true"><i></i><i></i><i></i></div>
+    <figcaption id="figure2-caption" class="paper-caption"><div class="caption-copy"><strong>图 2。 学习动作转移场并递归生成动作。</strong> (a) 将离散的示范动作插值为连续轨迹，结合沿示范的推进与偏离校正构造目标转移向量，在轨迹邻域中形成目标动作转移场 F*。(b) 训练时，通过直接监督学习动作转移场 Fθ。(c) 推理时，以当前动作作为初始条件，通过 ODE 对学到的动作转移场进行数值积分，递归生成后续动作。</div></figcaption>
+  </figure>
+  <div class="prose"><h3>从离散示范，构造局部演化方向。</h3>
+    <p>首先，将离散的示范动作插值为连续路径 γ(τ)，路径的切向量给出示范动作的推进方向与速率。随后，在路径附近采样动作，并加入指向对应示范动作的校正项。最终的目标向量由<strong>沿示范推进</strong>和<strong>纠正动作偏离</strong>两部分共同构成。</p>
+    <p>这样，监督就从示范路径本身扩展到了它的邻域。当递归生成的动作发生偏离时，场依然能提供演化方向，让动作一边继续推进，一边回到示范路径附近。移动下图中的查询动作，可以看到两个分量如何共同决定它的变化方向。</p>
+  </div>
+  <figure class="wide field-panel" id="fieldPanel">
+    <div class="figure-top"><h4>一个动作，两个分量，一个演化方向</h4><button class="control-button" id="fieldPlay"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14M16 5v14"/></svg><span>暂停</span></button></div>
+    <div class="field-layout"><div class="field-visual"><svg id="field" viewBox="0 0 760 310" role="img" aria-label="可交互的动作转移场，展示推进与回归向量"></svg><p class="field-name">目标动作转移场 · F*</p></div><div class="vector-inset"><span class="inset-title">向量合成</span><svg id="vectorSum" viewBox="0 0 260 230" role="img" aria-label="推进向量与校正向量相加，得到目标转移向量"></svg></div></div>
+    <div class="legend field-legend"><span><i class="blue"></i>推进分量</span><span><i class="gold"></i>校正分量</span><span><i class="orange"></i>目标方向</span></div>
+    <div class="controls"><label>沿示范的位置<input id="position" type="range" min="15" max="80" value="43"></label><label>偏离路径的距离<input id="offset" type="range" min="-62" max="62" value="52"></label></div>
+    <figcaption class="formula"><span>F*(a, τ) = <b class="term-blue">γ̇(τ)</b> + <b class="term-gold">k (γ(τ) − a)</b></span><span>推进分量 + 校正分量</span></figcaption>
+  </figure>
+  <div class="prose method-learning"><h3>通过直接监督学习动作转移场。</h3>
+<p>目标场已经为采样动作及其演化时间提供了变化方向。接下来，模型需要结合当前任务的视觉、语言和机器人状态，学会预测这个方向。动作头接收这些条件，以及查询动作和演化时间，通过减小预测向量与目标向量的差异，学习条件动作转移场。</p>
+<p>这对应 <a class="figure-ref" href="#figure2-caption">图 2(b)</a> 中的直接场学习：示范与邻域查询动作共同提供训练信号，让模型学会路径上及路径附近的动作应当如何演化。</p></div>
+<div class="prose method-rollout"><h3>通过递归积分生成动作。</h3>
+<p>学到条件动作转移场后，生成便从当前动作开始。每一步 ODE 积分查询一次场，得到演化率，再据此更新动作；新动作随即成为下一步的起点。这种逐步依赖贯穿整个生成过程，使动作沿着同一演化过程持续向前。</p>
+<p>当新的视觉观测到来时，模型更新条件信息，并从当前动作继续演化。ODEAction 以动作头的形式实现，可以将这一生成过程接入不同的视觉语言骨干。接下来的实验将考察，这种改变如何影响不同基准和机器人上的任务成功率与运动质量。</p>
+</div>
+  <figure class="wide field-panel" id="rollPanel"><div class="figure-top"><h4>动作的递归演化</h4><span class="equation">aₙ₊₁ = aₙ + Δτ Fθ(aₙ, τₙ | c)</span></div><svg id="rollout" viewBox="0 0 1000 290" role="img" aria-label="对动作转移场逐步进行数值积分"></svg><p class="field-name">学习到的动作转移场 · Fθ</p><div class="controls rollout-controls"><button class="control-button" id="rollPlay"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14M16 5v14"/></svg><span>暂停</span></button><button class="control-button" id="rollReset"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10a8 8 0 1 1 1 8M4 4v6h6"/></svg><span>重播</span></button><label class="timeline">演化时间<input id="rollTime" type="range" min="0" max="40" value="0"></label><output id="rollCount">0 / 40</output></div><figcaption>查询动作转移场 → 更新动作 → 以新动作为起点继续演化。</figcaption></figure>
+</section>
+<section id="results"><div class="prose"><h2 class="section-title"><span>03</span> 实验表现</h2>
+<p>我们首先在 LIBERO 和 EBench 上比较连续动作演化与动作分块，并分析边界连续性的改善如何与任务成功率相联系。随后，在 RoboTwin 上验证不同骨干下的适用性，再与动作块续接方法比较，最后通过真实机器人实验检验这一生成方式的实际效果。</p>
+<p>成功率衡量任务完成情况，四项互补的轨迹指标则描述动作本身：NLDLJ 衡量时域平滑度，NSPARC 衡量频域平滑度，EE-MAJ 衡量末端平均绝对 jerk，边界跳变 衡量切换时刻的动作跳变。</p></div>
+<div id="chunking-results" class="experiment-section"><div class="prose"><h3>与动作分块比较</h3>
+<p>以 π₀.₅ 为基线策略，我们在 LIBERO 的桌面操作和 EBench 的精细操作任务上比较两种生成范式。两组实验分别呈现了已有较高成功率、以及精确动作仍具有挑战时，生成方式改变带来的效果。</p></div><div class="wide result-slot" data-result="libero"></div><div class="wide result-slot" data-result="ebench"></div></div>
+<div id="bdr-analysis" class="experiment-section"><div class="prose"><h3>边界连续性与任务成功率</h3>
+<p>上述提升引出了进一步的问题：边界跳变降低更多的任务，是否也获得了更大的成功率增益？边界不连续性降低率（BDR）衡量相对基线策略的 边界跳变 降幅。 <a class="figure-ref" href="#figure3-caption">图 3</a> 将十个评测单元按 BDR 排序，并以相同顺序呈现对应的成功率增益。</p>
+<p>在这一排序中，六项 EBench 任务均位于四组 LIBERO 任务之前。十个评测单元中，边界不连续性降低越多，成功率增益通常也越大，Spearman 相关系数为 0.939。这两个视角把生成动作的改善与任务执行效果联系了起来。</p></div>
+<figure id="figure3" class="wide bdr-figure"><div id="bdrChart"></div><figcaption id="figure3-caption" class="paper-caption"><div class="caption-copy"><strong>图 3。 边界连续性改善与任务性能增益之间的关系。</strong> (a) 将四组 LIBERO 任务与六项 EBench 任务按边界不连续性降低率（BDR）降序排列。(b) 按相同的评测单元顺序，展示 ODEAction 相对 Base Policy 的成功率增益（SR gain）。在这十个评测单元中，BDR 与成功率增益呈强正相关。</div></figcaption></figure></div>
+<div id="generality" class="experiment-section"><div class="prose"><h3>生成范式的通用性</h3>
+<p>接下来，我们考察这种提升能否扩展到不同骨干和任务设置。将 StarVLA-OFT 的动作头替换为 ODEAction 后，在 RoboTwin 全部 50 项双臂操作任务上，分别于 Clean 和 Random 设置下进行评测。</p></div><div class="wide result-slot" data-result="robotwin"></div></div>
+<div id="continuation" class="experiment-section"><div class="prose"><h3>与动作块续接方法比较</h3>
+<p>在验证不同骨干后，我们进一步与专门改善动作块续接的方法比较。RTC 在推理时约束新的动作块，Legato 在训练时学习跨块续接。以 StarVLA-π 为骨干，在五项 RoboTwin 任务上比较基线策略、RTC、Legato 与 ODEAction。</p>
+<p>RTC 和 Legato 降低了边界跳变，但平均成功率低于基线策略。ODEAction 将平均成功率提高到 84.4%，并在四项轨迹质量指标上均取得最优结果。通过建模动作演化率，任务完成效果、运动平滑度与轨迹连续性得到共同改善。</p></div><div class="wide result-slot" data-result="continuation"></div></div>
+<div id="real-robots" class="experiment-section"><div class="prose"><h3>真实机器人实验</h3>
+<p>最后，我们在 AgileX Cobot Magic 1.0 平台上，以 π₀.₅ 为基线策略开展真实机器人实验。四项任务覆盖抓取放置、打开抽屉、端水杯和插入勺子；每项任务采集 100 条示范轨迹，每种方法在每项任务上评测 20 次。</p>
+<p>ODEAction 的平均成功率达到 80%。相较基线，任务成功率与四项轨迹质量指标均得到改善。下方任务图片与定量结果一起呈现了这一生成范式在实际执行中的表现。</p></div><div class="wide result-slot" data-result="real"></div></div>
+<div id="ablation" class="experiment-section"><div class="prose"><h3>递归演化中的偏离与恢复</h3>
+<p>这些结果也回到了目标场的两个关键组成：邻域监督为示范路径之外的动作提供方向，校正项则引导偏离动作回到路径附近。下方三个画面沿同一条路径推进，并在同一时刻受到相同的偏移，分别展示两项设计的作用。</p></div>
+<figure id="ablationFigure" class="wide ablation-figure"><div class="ablation-toolbar"><span id="ablationStage">沿示范推进</span><div class="figure-actions"><button class="control-button" id="ablationPlay"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14M16 5v14"/></svg><span>暂停</span></button><button class="control-button" id="ablationReplay"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10a8 8 0 1 1 1 8M4 4v6h6"/></svg><span>重播</span></button></div></div><div class="ablation-grid"><div><h4>无邻域监督</h4><svg id="ablation-0" viewBox="0 0 360 245" role="img" aria-label="监督仅覆盖示范路径。"></svg><p>监督仅覆盖示范路径。</p></div><div><h4>有邻域，无校正</h4><svg id="ablation-1" viewBox="0 0 360 245" role="img" aria-label="动作继续推进，偏移持续存在。"></svg><p>动作继续推进，偏移持续存在。</p></div><div><h4>ODEAction</h4><svg id="ablation-2" viewBox="0 0 360 245" role="img" aria-label="推进与校正共同引导动作回归。"></svg><p>推进与校正共同引导动作回归。</p></div></div><figcaption>同一偏移下，比较不同场的演化响应。</figcaption></figure>
+<div class="wide ablation-evidence"><div><p>在五项任务的消融实验中，去掉邻域监督或校正项后，成功率分别降至 47.4% 和 56.2%；完整 ODEAction 达到 84.4%。邻域与校正共同支持了动作偏离示范后的持续生成。</p><p class="chart-source">表 4 · 五项任务消融</p></div><div><h4>任务成功率（%）↑</h4><div id="ablationChart"></div></div></div></div>
+<div class="prose closing"><h3>从预测未来片段，到学习动作演化。</h3><p>ODEAction 学习条件化的动作演化率，并以递归积分生成动作。在不同骨干、任务和机器人平台上，这一生成方式的改变，同时改善了任务完成效果与动作执行质量。</p><a class="read-button" href="assets/ODEAction.pdf">阅读全文 ↗</a></div>
+</section>
+<section id="cite" class="prose credits"><details><summary>引用本研究</summary><pre id="citation"></pre><button id="copyCitation">复制引用</button></details></section></article></main><footer class="wide"><span>Symbiosis Robotics</span><a href="#top">回到顶部 ↑</a></footer><dialog id="figureDialog"><button class="control-button" id="closeFigure" autofocus><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg><span>关闭</span></button><div class="zoom-scroll"><img src="assets/figure2.png" alt="论文原图大图"></div></dialog><script src="app.zh.js"></script><script src="language.js"></script></body></html>
