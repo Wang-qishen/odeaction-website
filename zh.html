@@ -1,13 +1,13 @@
 <!doctype html>
 <html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#f5f4ef"><meta name="description" content="ODEAction 学习动作如何演化。通过交互图解与机器人实验，了解连续动作生成。"><title>ODEAction — 从预测动作块到连续动作演化</title><link rel="icon" href="assets/logo.svg" type="image/svg+xml"><link rel="stylesheet" href="style.css"><link rel="alternate" hreflang="en" href="index.html"><link rel="alternate" hreflang="zh-CN" href="zh.html"></head>
-<body><a class="skip" href="#story">跳到正文</a><header><a class="brand" href="#top"><img src="assets/logo.svg" alt="Symbiosis Robotics"></a><nav aria-label="主导航"><a href="#idea">思路</a><a href="#method">方法</a><a href="#results">结果</a><a class="paper-link" href="assets/ODEAction.pdf">阅读论文 ↗</a><a class="language-link" href="index.html" lang="en" hreflang="en" aria-label="Switch to English">English</a></nav></header>
+<body><a class="skip" href="#story">跳到正文</a><header><a class="brand" href="#top"><img src="assets/logo.svg" alt="Symbiosis Robotics"></a><nav aria-label="主导航"><a href="#idea">思路</a><a href="#method">方法</a><a href="#results">结果</a><a class="paper-link" href="https://arxiv.org/abs/2611.09672">阅读论文 ↗</a><a class="language-link" href="index.html" lang="en" hreflang="en" aria-label="Switch to English">English</a></nav></header>
 
 <main id="top">
 <div class="hero wide">
   <div class="eyebrow">SYMBIOSIS ROBOTICS · 研究</div>
   <h1>ODEAction</h1>
   <p class="subtitle"><span>从预测动作块</span><span>到<em>连续动作演化。</em></span></p>
-  <div class="hero-bottom"><p class="intro">机器人在连续的世界中运动，它的动作也应自然演化。</p><div class="links"><a href="assets/ODEAction.pdf">论文 ↗</a></div></div>
+  <div class="hero-bottom"><p class="intro">机器人在连续的世界中运动，它的动作也应自然演化。</p><div class="links"><a href="https://arxiv.org/abs/2611.09672">论文 ↗</a></div></div>
 <div class="front-authors" id="authors"><div id="authorList" aria-label="作者"></div><div class="author-meta"><span>‡ 项目负责人 · * 通讯作者</span><details><summary>所属机构</summary><div id="affiliationList"></div></details></div></div>
 </div>
 <figure class="wide comparison" id="idea">
@@ -89,6 +89,6 @@
 <p>这些结果也回到了目标场的两个关键组成：邻域监督为示范路径之外的动作提供方向，校正项则引导偏离动作回到路径附近。下方三个画面沿同一条路径推进，并在同一时刻受到相同的偏移，分别展示两项设计的作用。</p></div>
 <figure id="ablationFigure" class="wide ablation-figure"><div class="ablation-toolbar"><span id="ablationStage">沿示范推进</span><div class="figure-actions"><button class="control-button" id="ablationPlay"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14M16 5v14"/></svg><span>暂停</span></button><button class="control-button" id="ablationReplay"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10a8 8 0 1 1 1 8M4 4v6h6"/></svg><span>重播</span></button></div></div><div class="ablation-grid"><div><h4>无邻域监督</h4><svg id="ablation-0" viewBox="0 0 360 245" role="img" aria-label="监督仅覆盖示范路径。"></svg><p>监督仅覆盖示范路径。</p></div><div><h4>有邻域，无校正</h4><svg id="ablation-1" viewBox="0 0 360 245" role="img" aria-label="动作继续推进，偏移持续存在。"></svg><p>动作继续推进，偏移持续存在。</p></div><div><h4>ODEAction</h4><svg id="ablation-2" viewBox="0 0 360 245" role="img" aria-label="推进与校正共同引导动作回归。"></svg><p>推进与校正共同引导动作回归。</p></div></div><figcaption>同一偏移下，比较不同场的演化响应。</figcaption></figure>
 <div class="wide ablation-evidence"><div><p>在五项任务的消融实验中，去掉邻域监督或校正项后，成功率分别降至 47.4% 和 56.2%；完整 ODEAction 达到 84.4%。邻域与校正共同支持了动作偏离示范后的持续生成。</p><p class="chart-source">表 4 · 五项任务消融</p></div><div><h4>任务成功率（%）↑</h4><div id="ablationChart"></div></div></div></div>
-<div class="prose closing"><h3>从预测未来片段，到学习动作演化。</h3><p>ODEAction 学习条件化的动作演化率，并以递归积分生成动作。在不同骨干、任务和机器人平台上，这一生成方式的改变，同时改善了任务完成效果与动作执行质量。</p><a class="read-button" href="assets/ODEAction.pdf">阅读全文 ↗</a></div>
+<div class="prose closing"><h3>从预测未来片段，到学习动作演化。</h3><p>ODEAction 学习条件化的动作演化率，并以递归积分生成动作。在不同骨干、任务和机器人平台上，这一生成方式的改变，同时改善了任务完成效果与动作执行质量。</p><a class="read-button" href="https://arxiv.org/abs/2611.09672">阅读全文 ↗</a></div>
 </section>
 <section id="cite" class="prose credits"><details><summary>引用本研究</summary><pre id="citation"></pre><button id="copyCitation">复制引用</button></details></section></article></main><footer class="wide"><span>Symbiosis Robotics</span><a href="#top">回到顶部 ↑</a></footer><dialog id="figureDialog"><button class="control-button" id="closeFigure" autofocus><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg><span>关闭</span></button><div class="zoom-scroll"><img src="assets/figure2.png" alt="论文原图大图"></div></dialog><script src="app.zh.js"></script><script src="language.js"></script></body></html>
