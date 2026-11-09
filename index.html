@@ -70,7 +70,7 @@
 </section>
 <section id="results"><div class="prose"><h2 class="section-title"><span>03</span> Experiments</h2>
 <p>We first compare continuous action evolution with action chunking on LIBERO and EBench, and examine how improved boundary continuity relates to task success. We then test a different backbone on RoboTwin, compare against action-chunk continuation methods, and finally evaluate the same generation principle on real robots.</p>
-<p>Success rate measures task completion. Four complementary trajectory metrics describe the motion: NLDLJ for time-domain smoothness, NSPARC for frequency-domain smoothness, EE-MAJ for end-effector mean absolute jerk, and Boundary Jump for action changes at transitions.</p></div>
+<p>Success rate measures task completion. Four complementary trajectory metrics describe the motion: NLDLJ for time-domain smoothness, NSPARC for frequency-domain smoothness, EE-MAJ for end-effector mean absolute jerk, and Boundary Jump for action changes at transitions. Across these benchmarks, ODEAction produces smoother motion and more continuous action transitions, improving trajectory quality.</p></div>
 <div id="chunking-results" class="experiment-section"><div class="prose"><h3>Comparison with action chunking</h3>
 <p>With π₀.₅ as the base policy, we compare the two generation paradigms across tabletop tasks in LIBERO and fine manipulation in EBench. Together, they show how the change in generation behaves both when task success is already high and when precise motion remains challenging.</p></div><div class="wide result-slot" data-result="libero"></div><div class="wide result-slot" data-result="ebench"></div></div>
 <div id="bdr-analysis" class="experiment-section"><div class="prose"><h3>Boundary continuity and task success</h3>

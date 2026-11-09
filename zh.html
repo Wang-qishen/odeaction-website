@@ -70,7 +70,7 @@
 </section>
 <section id="results"><div class="prose"><h2 class="section-title"><span>03</span> 实验表现</h2>
 <p>我们首先在 LIBERO 和 EBench 上比较连续动作演化与动作分块，并分析边界连续性的改善如何与任务成功率相联系。随后，在 RoboTwin 上验证不同骨干下的适用性，再与动作块续接方法比较，最后通过真实机器人实验检验这一生成方式的实际效果。</p>
-<p>成功率衡量任务完成情况，四项互补的轨迹指标则描述动作本身：NLDLJ 衡量时域平滑度，NSPARC 衡量频域平滑度，EE-MAJ 衡量末端平均绝对 jerk，边界跳变 衡量切换时刻的动作跳变。</p></div>
+<p>成功率衡量任务完成情况，四项互补的轨迹指标则描述动作本身：NLDLJ 衡量时域平滑度，NSPARC 衡量频域平滑度，EE-MAJ 衡量末端平均绝对 jerk，边界跳变 衡量切换时刻的动作跳变。 在这些基准上，ODEAction 的运动更平滑，动作衔接更连续，轨迹质量得到提升。</p></div>
 <div id="chunking-results" class="experiment-section"><div class="prose"><h3>与动作分块比较</h3>
 <p>以 π₀.₅ 为基线策略，我们在 LIBERO 的桌面操作和 EBench 的精细操作任务上比较两种生成范式。两组实验分别呈现了已有较高成功率、以及精确动作仍具有挑战时，生成方式改变带来的效果。</p></div><div class="wide result-slot" data-result="libero"></div><div class="wide result-slot" data-result="ebench"></div></div>
 <div id="bdr-analysis" class="experiment-section"><div class="prose"><h3>边界连续性与任务成功率</h3>
