@@ -57,13 +57,13 @@ const methodSteps=[
  tr('Demonstrations → target field → learned field → evolving actions.','示范 → 目标场 → 学习场 → 连续动作演化。')
 ];
 function methodDraw(ms){
- const stage=ms<3400?0:ms<6100?1:ms<8800?2:3;
+ const stage=ms<2200?0:ms<4000?1:ms<5800?2:3;
  if(stage===methodStage)return;methodStage=stage;
  $$('.method-part').forEach((el,i)=>el.classList.toggle('pending',i>stage));
  $$('.sequence-progress i').forEach((el,i)=>el.classList.toggle('active',i<=stage));
  $('#methodStep').textContent=methodSteps[stage];$('#methodFigure').dataset.stage=stage;
 }
-const methodLoop=makeLoop('#methodFigure',12000,methodDraw,'#methodPlay');
+const methodLoop=makeLoop('#methodFigure',8000,methodDraw,'#methodPlay');
 $('#methodReplay').onclick=methodLoop.restart;
 
 // A soft dark color band travels tail-to-tip over each fixed arrow stroke.
