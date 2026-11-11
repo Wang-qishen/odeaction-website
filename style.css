@@ -20,3 +20,10 @@ html[lang="zh-CN"] body{font-family:Source,Chinese,"PingFang SC","Microsoft YaHe
 
 .field-name{font-size:14px;font-weight:600;color:#46665b;line-height:1.5;margin:-6px 0 14px;padding-left:6.3%}.field-visual{min-width:0}#rollPanel>.field-name{padding-left:4.8%;margin:-6px 0 18px}
 @media(max-width:760px){.ablation-evidence{margin-top:40px}.field-name{font-size:13px}}
+
+/* Exploration controls share the article's existing quiet button style. */
+.field-actions{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.field-modes{display:flex;gap:5px}
+.field-modes [aria-pressed="true"]{color:#46665b;border-color:#819a87;box-shadow:inset 0 -2px #819a87}
+#fieldPanel .figure-top{flex-wrap:wrap;gap:12px}
+@media(max-width:760px){#fieldPanel .figure-top{display:block}.field-actions{margin-top:12px;flex-wrap:wrap;gap:8px}.field-modes{gap:6px}}

@@ -31,17 +31,24 @@ function tick(now){const dt=Math.min(80,now-lastTime||0);lastTime=now;if(!docume
 requestAnimationFrame(tick);
 document.addEventListener('visibilitychange',()=>{for(const l of loops)l.target.classList.toggle('motion-paused',document.hidden||l.paused||!l.visible)});
 
-// Opening: both panels start empty; chunks arrive as units, evolution unfolds continuously.
+function smoothStep(value){const x=clamp(value);return x*x*(3-2*x);}
+
+// Both panels start empty; each chunk fades into focus before its boundary is annotated.
 function heroDraw(ms){
-  const progress=clamp((ms-650)/5600),fade=ms>7900?clamp((8500-ms)/600):1;
+  const progress=clamp((ms-200)/5600),fade=ms>7900?smoothStep((8500-ms)/600):1;
   const actionY=x=>114-42*Math.sin((x-42)/476*Math.PI*1.7);
   const xs=Array.from({length:8},(_,i)=>42+i*68);
   const chunks=xs.map((x,i)=>[x,actionY(x)+(i>=4?45:0)]);
-  const show1=ms>=650,show2=ms>=3400;
-  let left='';
-  if(show1)left+=`<path d="${path(chunks.slice(0,4))}" fill="none" stroke="${C.blue}" stroke-opacity=".11" stroke-width="32" stroke-linecap="round"/><path d="${path(chunks.slice(0,4))}" fill="none" stroke="${C.blue}" stroke-width="4.5" stroke-linecap="round"/>`+label(42,31,tr('CHUNK 1','动作块 1'),C.blue,15);
-  if(show2){left+=`<path d="${path(chunks.slice(4))}" fill="none" stroke="${C.blue}" stroke-opacity=".11" stroke-width="32" stroke-linecap="round"/><path d="${path(chunks.slice(4))}" fill="none" stroke="${C.blue}" stroke-width="4.5" stroke-linecap="round"/>`+label(365,31,tr('CHUNK 2','动作块 2'),C.blue,15);const[a,b]=chunks.slice(3,5);left+=`<rect x="${a[0]-17}" y="45" width="102" height="133" rx="10" fill="${C.orange}" opacity=".08"/><path d="M${a[0]},${a[1]}L${b[0]},${b[1]}" stroke="${C.orange}" stroke-width="3" stroke-dasharray="5 5"/>`+label(280,203,tr('Boundary jump','边界跳变'),C.orange,17,'middle');}
-  for(let i=0;i<(show2?8:show1?4:0);i++){const[x,y]=chunks[i];left+=`<circle cx="${x}" cy="${y}" r="6.5" fill="${C.blue}" stroke="#fcfcf8" stroke-width="2"/>`+label(x,y+29,'a'+i,C.ink,17,'middle');}
+  const amounts=[smoothStep((ms-200)/750),smoothStep((ms-1080)/780)];
+  let left='<defs>'+amounts.map((a,i)=>`<filter id="hero-soft-${i}" x="-25%" y="-40%" width="150%" height="180%"><feGaussianBlur stdDeviation="${4.2*(1-a)}"/></filter>`).join('')+'</defs>';
+  amounts.forEach((amount,i)=>{
+    const points=chunks.slice(i*4,i*4+4);
+    left+=`<g class="chunk-body" data-chunk="${i+1}" opacity="${amount}" filter="url(#hero-soft-${i})"><path d="${path(points)}" fill="none" stroke="${C.blue}" stroke-opacity=".11" stroke-width="32" stroke-linecap="round"/><path d="${path(points)}" fill="none" stroke="${C.blue}" stroke-width="4.5" stroke-linecap="round"/>`+label(i?365:42,31,tr('CHUNK '+(i+1),'动作块 '+(i+1)),C.blue,15);
+    points.forEach(([x,y],j)=>{left+=`<circle cx="${x}" cy="${y}" r="6.5" fill="${C.blue}" stroke="#fcfcf8" stroke-width="2"/>`+label(x,y+29,'a'+(j+i*4),C.ink,17,'middle');});
+    left+='</g>';
+  });
+  const [a,b]=chunks.slice(3,5),boundary=smoothStep((ms-2060)/450);
+  left+=`<g class="boundary-indicator" opacity="${boundary}"><rect x="${a[0]-17}" y="45" width="102" height="133" rx="10" fill="${C.orange}" opacity=".08"/><path d="M${a[0]},${a[1]}L${b[0]},${b[1]}" stroke="${C.orange}" stroke-width="3" stroke-dasharray="5 5"/>${label(280,203,tr('Boundary jump','边界跳变'),C.orange,17,'middle')}</g>`;
   let right='';
   if(progress>0){const endX=42+476*progress;const count=Math.max(2,Math.ceil(progress*100));const pts=Array.from({length:count},(_,i)=>{const x=42+(endX-42)*i/(count-1);return[x,actionY(x)]});right+=`<path d="${path(pts)}" fill="none" stroke="${C.orange}" stroke-opacity=".11" stroke-width="32" stroke-linecap="round"/><path d="${path(pts)}" fill="none" stroke="${C.orange}" stroke-width="4.5" stroke-linecap="round"/>`;for(let i=0;i<=Math.floor(progress*7);i++)right+=`<circle cx="${xs[i]}" cy="${actionY(xs[i])}" r="5.5" fill="${C.orange}" stroke="#fcfcf8" stroke-width="2"/>`+label(xs[i],actionY(xs[i])+30,'a'+i,C.ink,17,'middle');right+=`<circle cx="${endX}" cy="${actionY(endX)}" r="10" fill="${C.orange}" stroke="#fcfcf8" stroke-width="3"/>`+label(42,31,tr('EVOLVE FROM THE CURRENT ACTION','从当前动作持续演化'),C.orange,15);}
   $('#chunks').innerHTML=`<g opacity="${fade}">${left}</g>`;$('#continuous').innerHTML=`<g opacity="${fade}">${right}</g>`;
@@ -107,8 +114,49 @@ function drawField(){
   $('#vectorSum').innerHTML=inset;
   paintFieldPulse($('#field'),fieldClock);
 }
-$('#position').oninput=drawField;$('#offset').oninput=drawField;drawField();
-const fieldLoop=makeLoop('#fieldPanel',9600,ms=>{fieldClock=ms;paintFieldPulse($('#field'),ms)},'#fieldPlay',1000);
+// The query tour shares the visible/paused clock with the existing directional pulse.
+let fieldMode='auto',fieldTourElapsed=0,fieldLastElapsed=null,fieldResume=null;
+const fieldTourKeys=[[0,22,12],[3600,65,12],[5500,65,50],[7900,65,-48],[12000,22,12]];
+function fieldTourAt(ms){
+  const t=((ms%12000)+12000)%12000;
+  const i=fieldTourKeys.findIndex((k,j)=>j<fieldTourKeys.length-1&&t<fieldTourKeys[j+1][0]);
+  const a=fieldTourKeys[i],b=fieldTourKeys[i+1],u=smoothStep((t-a[0])/(b[0]-a[0]));
+  return [a[1]+(b[1]-a[1])*u,a[2]+(b[2]-a[2])*u];
+}
+function fieldValues(){return [+$('#position').value,+$('#offset').value];}
+function syncFieldMode(){
+  $('#fieldPanel').dataset.mode=fieldMode;
+  $('#fieldAuto').setAttribute('aria-pressed',String(fieldMode==='auto'));
+  $('#fieldManual').setAttribute('aria-pressed',String(fieldMode==='manual'));
+}
+function renderFieldFrame(ms){
+  const dt=fieldLastElapsed===null?0:(ms-fieldLastElapsed+48000)%48000;
+  fieldLastElapsed=ms;fieldClock=ms;
+  if(fieldMode==='auto'){
+    fieldTourElapsed=(fieldTourElapsed+dt)%12000;
+    let values=fieldTourAt(fieldTourElapsed);
+    if(fieldResume){
+      fieldResume.elapsed+=dt;
+      const u=smoothStep(fieldResume.elapsed/850);
+      values=values.map((v,i)=>fieldResume.from[i]+(v-fieldResume.from[i])*u);
+      if(u===1)fieldResume=null;
+    }
+    $('#position').value=values[0];$('#offset').value=values[1];drawField();
+  }else paintFieldPulse($('#field'),ms);
+}
+function enterManual(){fieldMode='manual';fieldResume=null;syncFieldMode();}
+for(const id of ['position','offset']){
+  $('#'+id).addEventListener('pointerdown',enterManual);
+  $('#'+id).addEventListener('input',()=>{enterManual();drawField();});
+}
+$('#fieldManual').onclick=enterManual;
+$('#fieldAuto').onclick=()=>{
+  if(fieldMode!=='auto')fieldResume={from:fieldValues(),elapsed:0};
+  fieldMode='auto';fieldLoop.paused=false;fieldLoop.sync();syncFieldMode();
+};
+drawField();syncFieldMode();
+// 48 seconds is a common multiple of the 12-second tour and 1.6-second arrow pulse.
+const fieldLoop=makeLoop('#fieldPanel',48000,renderFieldFrame,'#fieldPlay',0);
 
 const rolloutPoints=[[48,cy(0)+48]];
 for(let n=0;n<40;n++){const t=n/40,[x,y]=rolloutPoints[n];rolloutPoints.push([x+(904+5*(48+904*t-x))/40,y+(dy(t)+5*(cy(t)-y))/40]);}
@@ -136,10 +184,10 @@ function bars(values,names,colors,range,unit=''){
 }
 datasets.continuation={names:['Base','RTC','Legato','ODEAction'],colors:[C.blue,'#86acc5','#9aabb5',C.orange],sr:[82.4,81.2,78.0,84.4],range:[75,86],quality:[[25.37,24.85,24.75,22.96],[2.230,2.235,2.233,2.096],[1.080,.926,.857,.533],[.1165,.1025,.1022,.0847]],ranges:[[22,26],[2.05,2.26],[.4,1.2],[.08,.12]]};
 const resultCopy={
- libero:{title:'LIBERO',tag:'π₀.₅ · Spatial / Object / Goal / Long',description:tr('Across all four LIBERO suites, ODEAction improves success and all four trajectory metrics. Average success rises from 96.85% to 98.25%, alongside lower jerk and boundary jumps.','在 LIBERO 全部四组任务上，ODEAction 的成功率与四项轨迹指标均得到改善。平均成功率由 96.85% 提升至 98.25%，jerk 和边界跳变也同时降低。'),source:tr('Table 1 · Four-suite averages','表 1 · 四组任务平均结果')},
- ebench:{title:'EBench',tag:tr('π₀.₅ · Six fine-manipulation tasks','π₀.₅ · 六项精细操作任务'),description:tr('On Coffee, Flip Cup, Frame, Gear, Glass, and Nut, the same change improves both task completion and motion quality. Average success increases from 15.28% to 24.72%, while end-effector mean absolute jerk decreases from 1.43 to 0.30 (×10⁻³).','在 Coffee、Flip Cup、Frame、Gear、Glass 和 Nut 六项任务上，同一生成方式同时改善了任务完成效果与运动质量。平均成功率从 15.28% 提升至 24.72%，末端平均绝对 jerk 从 1.43 降至 0.30（×10⁻³）。'),source:tr('Table 1 · Six-task averages','表 1 · 六项任务平均结果')},
- robotwin:{title:'RoboTwin',tag:tr('StarVLA-OFT · 50 bimanual tasks','StarVLA-OFT · 50 项双臂操作任务'),description:tr('Average success rises from 85.7% to 89.4% in Clean and from 87.3% to 89.8% in Random. All four trajectory metrics improve, extending the gains to a different backbone and bimanual task setting.','Clean 设置下的平均成功率从 85.7% 提升至 89.4%，Random 设置下从 87.3% 提升至 89.8%。四项轨迹指标也均得到改善，将此前的收益扩展到了不同骨干与双臂操作场景。'),source:tr('Table 2 & Section 3.3 · 50-task evaluation','表 2 与第 3.3 节 · 50 项任务评测')},
- continuation:{title:tr('Action-chunk continuation comparison','动作块续接比较'),tag:tr('StarVLA-π · Five RoboTwin tasks','StarVLA-π · 五项 RoboTwin 任务'),description:'',source:tr('Table 3 · Five-task averages','表 3 · 五项任务平均结果')},
+ libero:{title:'LIBERO',tag:'π₀.₅ · Spatial / Object / Goal / Long',description:tr('Across all four LIBERO suites, ODEAction improves task success and all four trajectory-quality metrics. Higher completion rates are accompanied by smoother motion and smaller boundary jumps.','在 LIBERO 全部四组任务上，ODEAction 的任务成功率与四项轨迹质量指标均得到改善。更高的任务完成率伴随着更平滑的运动和更小的边界跳变。'),source:tr('Table 1 · Four-suite averages','表 1 · 四组任务平均结果')},
+ ebench:{title:'EBench',tag:tr('π₀.₅ · Six fine-manipulation tasks','π₀.₅ · 六项精细操作任务'),description:tr('On EBench, which emphasizes fine manipulation, average success improves by 61.8% relative to the base policy. The generated motion also has lower jerk and smaller boundary jumps, improving trajectory quality alongside task performance.','在侧重精细操作的 EBench 上，平均成功率相对基线策略提升了 61.8%。生成动作的 jerk 与边界跳变也同时降低，轨迹质量与任务表现共同改善。'),source:tr('Table 1 · Six-task averages','表 1 · 六项任务平均结果')},
+ robotwin:{title:'RoboTwin',tag:tr('StarVLA-OFT · 50 bimanual tasks','StarVLA-OFT · 50 项双臂操作任务'),description:tr('Across 50 RoboTwin tasks, success improves in both Clean and Random settings, together with all four trajectory-quality metrics. The gains extend beyond the original backbone and task setting.','在 RoboTwin 的 50 项任务上，Clean 与 Random 设置下的成功率均得到提升，四项轨迹质量指标也共同改善。这些收益延续到了不同的骨干与任务场景。'),source:tr('Table 2 & Section 3.3 · 50-task evaluation','表 2 与第 3.3 节 · 50 项任务评测')},
+ continuation:{title:tr('Action-chunk continuation comparison','动作块续接比较'),tag:'StarVLA-π · RoboTwin',description:'',source:tr('Table 3 · Average results','表 3 · 平均结果')},
  real:{title:tr('Real-robot results','真机实验结果'),tag:'π₀.₅ · AgileX Cobot Magic 1.0',description:'',source:tr('Figure 4 · Table S2 · Four-task averages','图 4 · 表 S2 · 四项任务平均结果')}
 };
 function cropImage(src,viewBox,width,height,alt){return `<svg viewBox="${viewBox}" role="img" aria-label="${alt}" preserveAspectRatio="xMidYMid slice"><image href="assets/${src}" width="${width}" height="${height}"/></svg>`;}
@@ -225,7 +273,7 @@ function abBackground(mode){
 for(let i=0;i<3;i++)$('#ablation-'+i).innerHTML=`<defs><clipPath id="ab-clip-${i}"><rect width="360" height="211"/></clipPath></defs>`+abBackground(i)+`<g class="ab-trace" clip-path="url(#ab-clip-${i})"></g><g class="ab-state"></g>`;
 function drawAblation(ms){
  const progress=clamp((ms-450)/7350),fade=ms>10100?clamp((11000-ms)/900):1;
- $('#ablationStage').textContent=progress<abShock?tr('Following the demonstration','沿示范推进'):progress<.44?tr('The same displacement, at the same time','同一时刻，施加相同偏移'):tr('Continue evolving after the displacement','偏移之后，继续演化');
+ $('#ablationStage').textContent=progress<abShock?tr('Learning on and around the demonstration','学习示范及其邻域中的演化'):progress<.44?tr('Neighborhood supervision and correction','邻域监督与校正'):tr('Their roles in action evolution','两项设计在动作演化中的作用');
  for(let mode=0;mode<3;mode++){
   const before=[],after=[];const count=Math.max(2,Math.ceil(progress*90));
   for(let i=0;i<=count;i++){const t=progress*i/count;const point=abPoint(t,mode);(t<abShock?before:after).push(point);}
