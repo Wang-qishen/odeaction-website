@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#f5f4ef">
+  <title>ODEAction — Research Film</title>
+  <meta name="description" content="Watch the English research film for ODEAction: From Predicting Chunks to Evolving Actions. Paper, project page, and open-source code.">
+  <link rel="canonical" href="https://wang-qishen.github.io/odeaction-website/video/">
+  <meta property="og:title" content="ODEAction: From Predicting Chunks to Evolving Actions">
+  <meta property="og:description" content="The research film · English · 4:46">
+  <meta property="og:image" content="https://wang-qishen.github.io/odeaction-website/video/poster.png">
+  <meta property="og:url" content="https://wang-qishen.github.io/odeaction-website/video/">
+  <meta property="og:type" content="website">
+  <link rel="icon" href="../assets/logo.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="player.css">
+</head>
+<body>
+  <header>
+    <a class="brand" href="../index.html" aria-label="ODEAction project page"><img src="../assets/logo.svg" width="166" height="34" alt="Symbiosis Robotics"></a>
+    <a class="back-link" href="../index.html">Project Page ↗</a>
+  </header>
+  <main>
+    <div class="film-heading">
+      <p class="eyebrow">RESEARCH FILM · ENGLISH · 4:46</p>
+      <h1>ODEAction</h1>
+      <p class="subtitle">From predicting chunks to <em>evolving actions.</em></p>
+    </div>
+    <div class="player">
+      <video id="film" width="1920" height="1080" playsinline preload="none" poster="poster.png" data-src="ODEAction.mp4" aria-label="ODEAction research film with English narration and subtitles">
+        Your browser does not support HTML video. <a href="ODEAction.mp4">Download the film.</a>
+      </video>
+      <button class="play-button" id="playVideo" aria-label="Play ODEAction research film">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7Z"/></svg>
+        <span>Play film</span>
+      </button>
+    </div>
+    <p class="playback-status" id="playbackStatus" role="status" hidden></p>
+    <noscript><p><a href="ODEAction.mp4">Watch or download the film ↗</a></p></noscript>
+    <div class="film-footer">
+      <nav aria-label="Research resources">
+        <a href="https://arxiv.org/abs/2611.09672">Paper ↗</a>
+        <a href="../index.html">Project Page ↗</a>
+        <a href="https://github.com/OpenHelix-Team/ODEAction">Code ↗</a>
+      </nav>
+      <a class="download" href="ODEAction.mp4" download="ODEAction.mp4">Download video · 1080p ↓</a>
+    </div>
+    <p class="credits">English narration and subtitles · Music: <i>Sixes</i> by Vincent Rubinetti</p>
+  </main>
+  <script src="player.js"></script>
+</body>
+</html>
